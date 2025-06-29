@@ -1,0 +1,20 @@
+[MAIN]
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use.
+jobs=0
+
+# When enabled, pylint would attempt to guess common misconfiguration and emit
+# user-friendly hints instead of false-positive error messages.
+suggestion-mode=yes
+
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=79
+
+[REPORTS]
+# Activate the evaluation score.
+score=yes
+
+[MESSAGES CONTROL]
+disable=
+W0107, #unnecessary-pass
