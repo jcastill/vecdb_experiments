@@ -1,6 +1,6 @@
 from pymilvus import (
     connections, FieldSchema, CollectionSchema, DataType,
-    Collection
+    Collection, utility
 )
 from sentence_transformers import SentenceTransformer
 import os
@@ -17,7 +17,7 @@ def connect_milvus():
 
 
 def create_collection():
-    if Collection.exists(COLLECTION_NAME):
+    if utility.has_collection(COLLECTION_NAME):
         return Collection(COLLECTION_NAME)
 
     fields = [
@@ -75,7 +75,6 @@ def main():
     model = SentenceTransformer(MODEL_NAME)
     collection = create_collection()
 
-    # TODO: Add a check to see if the collection already exists
     # TODO: Add logic to read from different directories
     data_dir = "data"
     for fname in os.listdir(data_dir):
