@@ -13,13 +13,15 @@ def main():
         return
     vector = model.encode(query).tolist()
     col = Collection("docs")
-    results = col.search(
-        [vector],
-        anns_field="embedding",
-        param={"nprobe": 10},
-        limit=5,  # Lets get 5 matches for now, we can go to 3 later
-        output_fields=["command", "chunk"],
-    )
+    search_parameters = {
+        "data": [vector],
+        "anns_field": "embedding",
+        "param": {"nprobe": 10},
+        "limit": 5,  # Lets get 5 matches for now, we can go to 3 later
+        "output_fields": ["command", "chunk"]
+    }
+    results = col.search(**search_parameters)
+    assert len(results) == 1
     for r in results[0]:
         print(f"   [{r.entity['command']} Score={r.distance:.4f}]")
         print(r.entity['chunk'])
