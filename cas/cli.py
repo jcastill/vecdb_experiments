@@ -159,17 +159,14 @@ def load_embedding_model():
         raise ModelLoadError(str(e), model_name=embedding_config.model_name)
 
 
-def search_documents(query_vector, collection_name="docs"):
+def search_documents(query_vector, collection_name=None):
     """Search documents using configured parameters."""
     search_config = get_search_config()
     milvus_config = get_milvus_config()
 
     try:
-        # Use configured collection name if available
-        if milvus_config.collection_name != "vector_collection":
-            col_name = milvus_config.collection_name
-        else:
-            col_name = collection_name
+        # Use configured collection name by default
+        col_name = collection_name or milvus_config.collection_name
 
         col = Collection(col_name)
 
@@ -218,8 +215,8 @@ def display_results(results):
             if score < threshold:
                 continue
 
-        command = result.entity.get('command', 'N/A')
-        chunk = result.entity.get('chunk', 'No content available')
+        command = getattr(result.entity, 'command', 'N/A')
+        chunk = getattr(result.entity, 'chunk', 'No content available')
 
         print(f"\n{i}. [{command} | Score: {score:.4f}]")
         print(f"   {chunk}")
