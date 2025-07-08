@@ -1,6 +1,7 @@
 import sys
+import argparse
 from sentence_transformers import SentenceTransformer
-from pymilvus import connections, Collection
+from pymilvus import connections, Collection, utility
 
 # Import configuration
 from config import (
@@ -14,7 +15,8 @@ from cas.exceptions import (
     ConnectionError,
     ModelLoadError,
     SearchError,
-    QueryProcessingError
+    QueryProcessingError,
+    ConfigurationError
 )
 
 
@@ -48,6 +50,98 @@ def connect_to_milvus():
             host=milvus_config.host,
             port=milvus_config.port
         )
+
+
+def test_connection():
+    """Test connection to localMilvus and other components."""
+    print("=== Connection Test ===")
+
+    # Test Milvus connection
+    try:
+        print("1. Testing Milvus connection...")
+        connect_to_milvus()
+        print("   ✓ Milvus connection successful")
+
+        # Test if we can list collections
+        print("2. Testing database access...")
+        collections = utility.list_collections()
+        print(f"   ✓ Database access successful. Found {len(collections)} "
+              f"collections: {collections}")
+
+        # Test collection access if it exists
+        milvus_config = get_milvus_config()
+        collection_name = milvus_config.collection_name
+
+        print(f"3. Testing collection '{collection_name}' access...")
+        if utility.has_collection(collection_name):
+            collection = Collection(collection_name)
+            # Try to get collection stats
+            collection.load()
+            num_entities = collection.num_entities
+            print(f"   ✓ Collection '{collection_name}' exists and has "
+                  f"{num_entities} entities")
+        else:
+            print(f"   ⚠ Collection '{collection_name}' does not exist "
+                  f"(this is normal for new setups)")
+
+    except ConnectionError as e:
+        print(f"   ✗ Milvus connection failed: {e}")
+        return False
+    except Exception as e:
+        # Convert generic Milvus exceptions to ConnectionError for consistency
+        conn_error = ConnectionError(str(e))
+        print(f"   ✗ Milvus test failed: {conn_error}")
+        return False
+
+    # Test embedding model loading
+    try:
+        print("4. Testing embedding model loading...")
+        model = load_embedding_model()
+        print("   ✓ Embedding model loaded successfully")
+
+        # Test encoding a sample text
+        print("5. Testing embedding generation...")
+        test_text = "This is a test query"
+        test_vector = model.encode(test_text).tolist()
+        print(f"   ✓ Embedding generated successfully "
+              f"(dimension: {len(test_vector)})")
+
+    except ModelLoadError as e:
+        print(f"   ✗ Embedding model test failed: {e}")
+        return False
+    except Exception as e:
+        # Convert generic embedding exceptions to ModelLoadError 
+        # for consistency
+        model_error = ModelLoadError(str(e))
+        print(f"   ✗ Embedding test failed: {model_error}")
+        return False
+
+    # Test configuration
+    try:
+        print("6. Testing configuration...")
+        config = get_milvus_config()
+        search_config = get_search_config()
+        embedding_config = get_embedding_config()
+
+        print(f"   ✓ Milvus config: {config.host}:{config.port}, "
+              f"db: {config.database}")
+        print(f"   ✓ Search config: top_k={search_config.top_k}, "
+              f"metric={search_config.metric_type}")
+        print(f"   ✓ Embedding config: model={embedding_config.model_name}, "
+              f"device={embedding_config.device}")
+
+    except ConfigurationError as e:
+        print(f"   ✗ Configuration test failed: {e}")
+        return False
+    except Exception as e:
+        # Convert generic exceptions to ConfigurationError for consistency
+        config_error = ConfigurationError(str(e))
+        print(f"   ✗ Configuration test failed: {config_error}")
+        return False
+
+    print("\n=== All tests passed! ===")
+    print("Your vector database setup is working correctly.")
+    return True
 
 
 def load_embedding_model():
@@ -134,14 +228,45 @@ def display_results(results):
 
 def main():
     """Main CLI function."""
-    # Parse command line arguments
-    if len(sys.argv) < 2:
-        print("Usage: python -m cas.cli <query>")
-        print("Example: python -m cas.cli 'how to list files'")
+    parser = argparse.ArgumentParser(
+        description="Vector Database Experiments CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python -m cas.cli test                    # Test connection and setup
+  python -m cas.cli "how to list files"    # Search for query
+  python -m cas.cli --help                 # Show this help
+        """
+    )
+
+    parser.add_argument(
+        'command_or_query',
+        nargs='*',
+        help='Command to run (test) or search query'
+    )
+
+    args = parser.parse_args()
+
+    if not args.command_or_query:
+        parser.print_help()
         return 1
 
-    query = " ".join(sys.argv[1:])
-    print(f"Processing query: '{query}'")
+    # Join all arguments to form the command or query
+    input_text = " ".join(args.command_or_query)
+
+    # Handle test command
+    if input_text.lower() == 'test':
+        try:
+            if test_connection():
+                return 0
+            else:
+                return 1
+        except Exception as e:
+            print(f"Test failed with unexpected error: {e}")
+            return 1
+
+    # Handle search query
+    print(f"Processing query: '{input_text}'")
 
     try:
         # Connect to Milvus
@@ -152,10 +277,10 @@ def main():
 
         # Encode query
         try:
-            query_vector = model.encode(query).tolist()
+            query_vector = model.encode(input_text).tolist()
             print(f"Query vector generated (dimension: {len(query_vector)})")
         except Exception as e:
-            raise QueryProcessingError(str(e), query=query)
+            raise QueryProcessingError(str(e), query=input_text)
 
         # Search documents
         results = search_documents(query_vector)
@@ -177,6 +302,9 @@ def main():
         return 1
     except SearchError as e:
         print(f"Search Error: {e}")
+        return 1
+    except ConfigurationError as e:
+        print(f"Configuration Error: {e}")
         return 1
     except Exception as e:
         print(f"Unexpected Error: {e}")
