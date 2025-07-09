@@ -230,9 +230,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m cas.cli test                    # Test connection and setup
-  python -m cas.cli "how to list files"    # Search for query
-  python -m cas.cli --help                 # Show this help
+    python -m cas.cli test                   # Test connection and setup
+    python -m cas.cli "how to list files"    # Search for query
+    python -m cas.cli --help                 # Show this help
         """
     )
 
