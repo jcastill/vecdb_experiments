@@ -110,7 +110,7 @@ def test_connection():
         print(f"   ✗ Embedding model test failed: {e}")
         return False
     except Exception as e:
-        # Convert generic embedding exceptions to ModelLoadError 
+        # Convert generic embedding exceptions to ModelLoadError
         # for consistency
         model_error = ModelLoadError(str(e))
         print(f"   ✗ Embedding test failed: {model_error}")
