@@ -183,11 +183,11 @@ def main():
                     embeddings = model.encode(chunks).tolist()
                     insert_data(collection, command, chunks, embeddings)
                     processed_files += 1
-                    print(f"✅ Processed {fname}: {len(chunks)} chunks")
+                    print(f"✓ Processed {fname}: {len(chunks)} chunks")
                 except Exception as e:
-                    print(f"❌ Error processing {fname}: {e}")
+                    print(f"✗ Error processing {fname}: {e}")
 
-        print(f"✅ Processed {processed_files} files into Milvus "
+        print(f"✓ Processed {processed_files} files into Milvus "
               f"collection '{collection_name}'")
 
     except ConnectionError as e:
