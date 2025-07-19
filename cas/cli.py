@@ -53,7 +53,7 @@ def connect_to_milvus():
 
 
 def test_connection():
-    """Test connection to localMilvus and other components."""
+    """Test connection to local Milvus and other components."""
     print("=== Connection Test ===")
 
     # Test Milvus connection
@@ -140,7 +140,7 @@ def test_connection():
         return False
 
     print("\n=== All tests passed! ===")
-    print("Your vector database setup is working correctly.")
+    print("The vector database setup is working correctly.")
     return True
 
 
