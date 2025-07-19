@@ -89,7 +89,9 @@ def create_collection():
                     dtype=DataType.FLOAT_VECTOR,
                     dim=embed_dim)
     ]
-    schema = CollectionSchema(fields, description="Semantic search over docs")
+    schema = CollectionSchema(fields,
+                              description="Collection for storing commands \
+                                and results")
 
     collection = Collection(collection_name, schema)
 
@@ -175,6 +177,7 @@ def main():
 
         processed_files = 0
         for fname in os.listdir(data_dir):
+            # TODO: We'll want to process csv and other types eventually
             if fname.endswith(".txt"):
                 try:
                     command = fname.replace(".txt", "")
@@ -207,8 +210,6 @@ def main():
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    if exit_code:
-        exit(exit_code)
+    os.exit(1)
 
 # vim: set et ts=4 sw=4 :
